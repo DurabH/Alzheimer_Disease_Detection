@@ -43,7 +43,35 @@ cloudinary.config({
  * @returns {Promise<{ url: string, publicId: string }>} Cloud file metadata
  */
 exports.uploadToCloud = async (fileBuffer, fileName) => {
+    // Pre-validate Cloudinary credentials
+    const { cloudName, apiKey, apiSecret } = config.storage.cloudinary;
+    if (!cloudName || !apiKey || !apiSecret) {
+        logger.error('Cloudinary credentials missing', {
+            hasCloudName: !!cloudName,
+            hasApiKey: !!apiKey,
+            hasApiSecret: !!apiSecret,
+        });
+        throw new AppError(
+            'Cloud storage is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.',
+            500
+        );
+    }
+
+    // Pre-validate file buffer
+    if (!fileBuffer || fileBuffer.length === 0) {
+        logger.error('uploadToCloud called with empty buffer', { fileName });
+        throw new AppError('Upload failed: file data is empty.', 400);
+    }
+
+    logger.info(`Starting Cloudinary upload: ${fileName} (${(fileBuffer.length / 1024).toFixed(1)} KB)`);
+
     return new Promise((resolve, reject) => {
+        // Timeout after 60 seconds
+        const timeout = setTimeout(() => {
+            logger.error(`Cloudinary upload timed out after 60s: ${fileName}`);
+            reject(new AppError('Upload timed out. Please try with a smaller file.', 504));
+        }, 60000);
+
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 folder: config.storage.cloudinary.folder,
@@ -51,9 +79,16 @@ exports.uploadToCloud = async (fileBuffer, fileName) => {
                 public_id: `${Date.now()}-${path.parse(fileName).name}`,
             },
             (error, result) => {
+                clearTimeout(timeout);
                 if (error) {
-                    logger.error(`Cloudinary upload failed: ${error.message}`);
-                    return reject(new AppError('Failed to upload MRI to cloud storage.', 500));
+                    logger.error(`Cloudinary upload failed for ${fileName}:`, {
+                        message: error.message,
+                        httpCode: error.http_code,
+                        name: error.name,
+                    });
+                    // Surface the actual Cloudinary error for debugging
+                    const detail = error.message || 'Unknown cloud storage error';
+                    return reject(new AppError(`Failed to upload MRI to cloud storage: ${detail}`, 500));
                 }
                 logger.info(`Cloudinary upload successful: ${result.secure_url}`);
                 resolve({
@@ -62,6 +97,13 @@ exports.uploadToCloud = async (fileBuffer, fileName) => {
                 });
             }
         );
+
+        // Handle stream errors
+        uploadStream.on('error', (streamErr) => {
+            clearTimeout(timeout);
+            logger.error(`Cloudinary stream error for ${fileName}: ${streamErr.message}`);
+            reject(new AppError(`Cloud upload stream error: ${streamErr.message}`, 500));
+        });
 
         // Pipe buffer to the upload stream
         Readable.from(fileBuffer).pipe(uploadStream);
