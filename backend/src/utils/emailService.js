@@ -1,74 +1,64 @@
 /**
  * =============================================================================
- * EMAIL SERVICE
+ * EMAIL SERVICE (API-BASED)
  * =============================================================================
- * Nodemailer-based email utility.
- * In development mode without SMTP config, logs emails to console.
+ * Handles email delivery via the Brevo (formerly Sendinblue) REST API.
+ * Used instead of SMTP to bypass cloud network restrictions (e.g. Hugging Face).
  * =============================================================================
  */
 
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 const logger = require('../config/logger');
 
 /**
- * Create mail transporter
- * Falls back to console logging in dev if no SMTP credentials
- */
-const createTransporter = () => {
-    const host = process.env.SMTP_HOST;
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
-
-    if (host && user && pass) {
-        const port = parseInt(process.env.SMTP_PORT, 10) || 587;
-        const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-
-        return nodemailer.createTransport({
-            host,
-            port,
-            secure,
-            auth: { user, pass },
-            // Add extra timeout for stability
-            connectionTimeout: 10000,
-            greetingTimeout: 5000,
-        });
-    }
-
-    // Dev fallback — no real SMTP
-    logger.warn('SMTP not configured. Emails will be logged to console.');
-    return null;
-};
-
-const transporter = createTransporter();
-
-/**
- * Send an email
+ * Send an email using the Brevo API
  * @param {object} options - { to, subject, text, html, replyTo }
  * @returns {Promise<void>}
  */
 exports.sendEmail = async ({ to, subject, text, html, replyTo }) => {
-    const from = process.env.SMTP_FROM || '"AlzDetect System" <noreply@alzdetect.com>';
+    const apiKey = process.env.SMTP_PASS; // We reuse SMTP_PASS for the API Key
+    const fromEmail = process.env.SMTP_USER || 'noreply@alzdetect.com';
+    const fromName = process.env.SMTP_FROM || 'AlzDetect System';
 
-    if (transporter) {
-        const info = await transporter.sendMail({ 
-            from, 
-            to, 
-            subject, 
-            text, 
-            html, 
-            replyTo 
-        });
-        logger.info(`Email sent: ${info.messageId} to ${to}`);
-        return info;
+    if (!apiKey) {
+        logger.warn('Email API Key (SMTP_PASS) not configured. Logging to console instead.');
+        logger.info('=== DEV EMAIL (API Mode) ===');
+        logger.info(`To: ${to}`);
+        logger.info(`Subject: ${subject}`);
+        logger.info(`Body: ${text || html}`);
+        logger.info('=== END DEV EMAIL ===');
+        return { messageId: 'dev-mode', to, subject };
     }
 
-    // Fallback: log to console
-    logger.info('=== DEV EMAIL (not actually sent) ===');
-    logger.info(`To: ${to}`);
-    logger.info(`Subject: ${subject}`);
-    logger.info(`Body: ${text || html}`);
-    logger.info('=== END DEV EMAIL ===');
-    return { messageId: 'dev-mode', to, subject };
+    try {
+        const response = await axios.post(
+            'https://api.brevo.com/v3/smtp/email',
+            {
+                sender: { name: fromName, email: fromEmail },
+                to: [{ email: to }],
+                subject: subject,
+                htmlContent: html,
+                textContent: text,
+                replyEmail: replyTo,
+            },
+            {
+                headers: {
+                    'api-key': apiKey,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        logger.info(`Email sent successfully via Brevo API to ${to}. MessageID: ${response.data.messageId}`);
+        return response.data;
+    } catch (error) {
+        const errorMsg = error.response?.data?.message || error.message;
+        logger.error(`Brevo API Email failed: ${errorMsg}`, {
+            status: error.response?.status,
+            data: error.response?.data,
+        });
+        throw new Error(`Email delivery failed: ${errorMsg}`);
+    }
 };
 
 /**
@@ -101,7 +91,11 @@ exports.sendPasswordResetEmail = async (email, otp) => {
             </div>
         </div>
     `;
-    const text = `Password Reset Code: ${otp}\n\nYou requested a password reset. Use this code to set a new password (expires in 10 minutes): ${otp}\n\nIf you didn't request this, ignore this email.`;
+    const text = `Password Reset Code: ${otp}
+
+You requested a password reset. Use this code to set a new password (expires in 10 minutes): ${otp}
+
+If you didn't request this, ignore this email.`;
 
     await exports.sendEmail({ to: email, subject, text, html });
 };
@@ -126,11 +120,19 @@ exports.sendContactEmail = async ({ name, email, subject, message }) => {
                     <tr><td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Subject:</td><td style="padding: 8px 0; color: #1f2937;">${subject}</td></tr>
                 </table>
                 <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-                <p style="color: #1f2937; line-height: 1.6;">${message.replace(/\n/g, '<br>')}</p>
+                <p style="color: #1f2937; line-height: 1.6;">${message.replace(/
+/g, '<br>')}</p>
             </div>
         </div>
     `;
-    const text = `Contact Form Submission\n\nName: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`;
+    const text = `Contact Form Submission
+
+Name: ${name}
+Email: ${email}
+Subject: ${subject}
+
+Message:
+${message}`;
 
     await exports.sendEmail({ 
         to: adminEmail, 
