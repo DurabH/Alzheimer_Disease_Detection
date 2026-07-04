@@ -43,14 +43,21 @@ const transporter = createTransporter();
 
 /**
  * Send an email
- * @param {object} options - { to, subject, text, html }
+ * @param {object} options - { to, subject, text, html, replyTo }
  * @returns {Promise<void>}
  */
-exports.sendEmail = async ({ to, subject, text, html }) => {
+exports.sendEmail = async ({ to, subject, text, html, replyTo }) => {
     const from = process.env.SMTP_FROM || '"AlzDetect System" <noreply@alzdetect.com>';
 
     if (transporter) {
-        const info = await transporter.sendMail({ from, to, subject, text, html });
+        const info = await transporter.sendMail({ 
+            from, 
+            to, 
+            subject, 
+            text, 
+            html, 
+            replyTo 
+        });
         logger.info(`Email sent: ${info.messageId} to ${to}`);
         return info;
     }
@@ -125,5 +132,11 @@ exports.sendContactEmail = async ({ name, email, subject, message }) => {
     `;
     const text = `Contact Form Submission\n\nName: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`;
 
-    await exports.sendEmail({ to: adminEmail, subject: mailSubject, text, html });
+    await exports.sendEmail({ 
+        to: adminEmail, 
+        subject: mailSubject, 
+        text, 
+        html, 
+        replyTo: email 
+    });
 };
