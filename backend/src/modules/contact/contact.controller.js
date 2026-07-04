@@ -86,14 +86,38 @@ exports.replyToInquiry = asyncHandler(async (req, res) => {
         throw new AppError('Inquiry not found', 404);
     }
 
+    // 1. Update the database record
     inquiry.replyMessage = replyMessage;
     inquiry.status = 'replied';
     inquiry.repliedBy = req.user.id;
     inquiry.repliedAt = Date.now();
-
     await inquiry.save();
 
-    logger.info(`Admin replied to inquiry ${id}`, { adminId: req.user.id });
+    // 2. Send the actual email to the user
+    try {
+        await emailService.sendEmail({
+            to: inquiry.email,
+            subject: `Re: ${inquiry.subject}`,
+            text: `Hello ${inquiry.name},\n\n${replyMessage}\n\nBest regards,\nAlzDetect Team`,
+            html: `
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #4f46e5; margin: 0;">🧠 AlzDetect</h1>
+                    </div>
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 30px; border: 1px solid #e5e7eb;">
+                        <p style="color: #1f2937; line-height: 1.6;">${replyMessage.replace(/\\n/g, '<br>')}</p>
+                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                        <p style="color: #6b7280; font-size: 14px;">This is an official response from the AlzDetect Support Team.</p>
+                    </div>
+                </div>
+            `,
+            replyTo: process.env.SMTP_USER
+        });
+    } catch (err) {
+        logger.warn(`Failed to send reply email to ${inquiry.email}, but DB was updated`, { error: err.message });
+    }
+
+    logger.info(`Admin replied to inquiry ${id} and email sent to ${inquiry.email}`, { adminId: req.user.id });
 
     sendSuccess(res, 200, 'Reply sent successfully', { inquiry });
 });
