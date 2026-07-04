@@ -30,6 +30,9 @@ exports.sendEmail = async ({ to, subject, text, html, replyTo }) => {
         return { messageId: 'dev-mode', to, subject };
     }
 
+    // DEBUG: Verify which key is being loaded (logs only first 4 chars for security)
+    logger.info(`Attempting to send email using API Key starting with: ${apiKey.substring(0, 4)}...`);
+
     try {
         const response = await axios.post(
             'https://api.brevo.com/v3/smtp/email',
