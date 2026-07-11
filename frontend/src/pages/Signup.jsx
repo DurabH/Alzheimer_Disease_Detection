@@ -84,12 +84,12 @@ export default function Signup() {
         { label: 'Special Character', met: passwordRequirements.special },
     ];
 
-    const particles = [...Array(12)].map((_, i) => ({
+    const particles = [...Array(6)].map((_, i) => ({
         id: i, size: Math.random() * 10 + 5, left: `${Math.random() * 100}%`, duration: Math.random() * 15 + 10
     }));
 
     return (
-        <div className="min-h-screen w-screen flex justify-center items-center bg-gradient-to-br from-indigo-100 via-white to-purple-100 p-6 overflow-hidden relative">
+        <div className="min-h-screen w-full flex justify-center items-center bg-gradient-to-br from-indigo-100 via-white to-purple-100 p-6 overflow-hidden relative">
             {particles.map((p) => (
                 <motion.div key={p.id} className="absolute bg-indigo-200 rounded-full opacity-20"
                     style={{ width: p.size, height: p.size, left: p.left, top: '-10%' }}

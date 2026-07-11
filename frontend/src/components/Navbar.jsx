@@ -46,7 +46,7 @@ export default function Navbar({ isSidebarOpen, setIsSidebarOpen, scrollToSectio
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="bg-white/90 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-200/50 shadow-sm"
+      className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200/50 shadow-sm"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
@@ -146,13 +146,6 @@ export default function Navbar({ isSidebarOpen, setIsSidebarOpen, scrollToSectio
           {/* RIGHT SIDE — Mobile Menu Toggle */}
           <div className="md:hidden flex items-center gap-2">
             <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-3 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200 hover:bg-slate-200 transition-colors"
-                title="Open Sidebar"
-            >
-                <Menu size={20} />
-            </button>
-            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-colors"
               title="Toggle Menu"
@@ -167,12 +160,19 @@ export default function Navbar({ isSidebarOpen, setIsSidebarOpen, scrollToSectio
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, scaleY: 0 }}
-            animate={{ opacity: 1, scaleY: 1 }}
-            exit={{ opacity: 0, scaleY: 0 }}
-            className="md:hidden bg-white border-t border-slate-100 shadow-2xl origin-top"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden bg-white border-t border-slate-100 shadow-2xl overflow-hidden"
           >
             <div className="px-6 py-8 space-y-4">
+              {/* Sidebar items + Navbar items consolidated */}
+              <button onClick={() => { setIsSidebarOpen(!isSidebarOpen); setMobileMenuOpen(false); }} className="w-full flex items-center gap-4 py-3 text-slate-600 font-bold text-lg">
+                <Menu size={22} className="text-indigo-500" />
+                Open Navigation
+              </button>
+
               {navItems.map((item) => (
                 <button
                   key={item.section}

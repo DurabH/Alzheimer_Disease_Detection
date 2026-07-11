@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -7,22 +7,23 @@ import AppLayout from "./components/AppLayout";
 import AdminLayout from "./components/AdminLayout";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
-import UploadMRI from "./pages/UploadMRI";
-import CognitiveTest from "./pages/CognitiveTest";
-import Results from "./pages/Results";
-import Profile from "./pages/Profile";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminReports from "./pages/admin/AdminReports";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminInquiries from "./pages/admin/AdminInquiries";
-import UserInquiries from "./pages/UserInquiries";
+
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Home = lazy(() => import("./pages/Home"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const UploadMRI = lazy(() => import("./pages/UploadMRI"));
+const CognitiveTest = lazy(() => import("./pages/CognitiveTest"));
+const Results = lazy(() => import("./pages/Results"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminInquiries = lazy(() => import("./pages/admin/AdminInquiries"));
+const UserInquiries = lazy(() => import("./pages/UserInquiries"));
 
 function App() {
   return (
@@ -30,32 +31,34 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <Router>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
+            <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
 
-              {/* Patient/User Protected Routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
-              <Route path="/upload-mri" element={<ProtectedRoute><AppLayout><UploadMRI /></AppLayout></ProtectedRoute>} />
-              <Route path="/cognitive-test" element={<ProtectedRoute><AppLayout><CognitiveTest /></AppLayout></ProtectedRoute>} />
-              <Route path="/results" element={<ProtectedRoute><AppLayout><Results /></AppLayout></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
-              <Route path="/inquiries" element={<ProtectedRoute><AppLayout><UserInquiries /></AppLayout></ProtectedRoute>} />
+                  {/* Patient/User Protected Routes */}
+                  <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
+                  <Route path="/upload-mri" element={<ProtectedRoute><AppLayout><UploadMRI /></AppLayout></ProtectedRoute>} />
+                  <Route path="/cognitive-test" element={<ProtectedRoute><AppLayout><CognitiveTest /></AppLayout></ProtectedRoute>} />
+                  <Route path="/results" element={<ProtectedRoute><AppLayout><Results /></AppLayout></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
+                  <Route path="/inquiries" element={<ProtectedRoute><AppLayout><UserInquiries /></AppLayout></ProtectedRoute>} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
-              <Route path="/admin/users" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
-              <Route path="/admin/reports" element={<AdminRoute><AdminLayout><AdminReports /></AdminLayout></AdminRoute>} />
-              <Route path="/admin/analytics" element={<AdminRoute><AdminLayout><AdminAnalytics /></AdminLayout></AdminRoute>} />
-              <Route path="/admin/inquiries" element={<AdminRoute><AdminLayout><AdminInquiries /></AdminLayout></AdminRoute>} />
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
+                  <Route path="/admin/users" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
+                  <Route path="/admin/reports" element={<AdminRoute><AdminLayout><AdminReports /></AdminLayout></AdminRoute>} />
+                  <Route path="/admin/analytics" element={<AdminRoute><AdminLayout><AdminAnalytics /></AdminLayout></AdminRoute>} />
+                  <Route path="/admin/inquiries" element={<AdminRoute><AdminLayout><AdminInquiries /></AdminLayout></AdminRoute>} />
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                  {/* Fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </Suspense>
           </Router>
         </ToastProvider>
       </AuthProvider>
