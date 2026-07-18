@@ -58,31 +58,6 @@ To achieve optimal diagnostic sensitivity, this project implements a **Late Feat
 
 ---
 
-## 🏗 Enterprise Microservices & Dual-Path Architecture
-
-The platform follows a highly decoupled, scalable architecture designed to handle computational bottlenecks elegantly.
-
-```mermaid
-graph TD
-    Client[React 19 Frontend SPA] <-->|HTTPS / JSON / Upload| API[Node.js Express Gateway]
-    API <-->|Mongoose ODM| DB[(MongoDB Atlas Cloud DB)]
-    
-    subgraph Execution Path Options
-        API <-->|Path 1: Sync HTTP| ML[FastAPI ML Service]
-        API --->|Path 2: Async Job| Redis[(Redis / BullMQ)]
-        Worker[Node.js Worker Process] <-->|Consume Queue| Redis
-        Worker <-->|REST API| ML
-    end
-    
-    subgraph Storage Strategy
-        API <-->|Local Disk / Cloud| Storage[(Disk / S3 / Cloudinary)]
-    end
-
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px;
-    classDef highlight fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
-    class Client,API,ML,Worker highlight;
-```
-
 ### 🚦 Processing Path Flexibility:
 *   **Synchronous Path (`USE_ASYNC=false`)**: The Express API receives client requests, issues a direct HTTP POST request to the FastAPI ML service, awaits the response, and returns the diagnostic report. Ideal for straightforward local deployments.
 *   **Asynchronous Scalable Path (`USE_ASYNC=true`)**: Under production loads, the API Gateway immediately offloads incoming MRI and Cognitive assessments to a **Redis-backed BullMQ Queue**, returning a `pending` ticket to the client. A dedicated, horizontally scalable background **Worker process** (`prediction.worker.js`) consumes the queue, handles the API payload, sends it to the ML Microservice, and updates MongoDB. The client updates in real-time via status polling.
