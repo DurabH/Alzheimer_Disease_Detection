@@ -207,14 +207,5 @@ Ensure you have the following installed:
 
 ---
 
-## 🎓 Academic Thesis Research Background
-
-For detailed coverage of the underlying scientific models, clinical dataset metrics (derived from ADNI), performance reviews, and theoretical foundations of late feature fusion, please review the academic assets included at the root of the project:
-
-*   **[`Alzheimer_Disease_Detection_CS_Mubariz_Rehman.pdf`](./Alzheimer_Disease_Detection_CS_Mubariz_Rehman.pdf)**: Complete written research paper detailing model formulation, performance metrics, and clinical evaluations.
-*   **[`Alzheimer_Disease_Detection_CS_Mubariz_Rehman.pptx`](./Alzheimer_Disease_Detection_CS_Mubariz_Rehman.pptx)**: Project presentation slides summarizing architecture, methodology, results, and thesis defence.
-*   **[`Alzheimer_Disease_Detection_CS_Mubariz_Rehman.docx`](./Alzheimer_Disease_Detection_CS_Mubariz_Rehman.docx)**: Raw document containing full thesis drafts and extensive literature reviews.
-
----
 
 *This system was meticulously designed to demonstrate modern microservices-inspired engineering, secure serverless design, cloud-ready file-handling, and practical deep-learning deployments.*
